@@ -1,0 +1,5 @@
+target
+flake.nix
+flake.lock
+.terraform*
+.idea
