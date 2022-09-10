@@ -1,0 +1,2 @@
+[dynamodb]
+table = "rust-graphql-exercise"

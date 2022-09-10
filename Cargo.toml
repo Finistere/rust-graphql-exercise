@@ -9,3 +9,9 @@ edition = "2021"
 aws-config = "0.48.0"
 aws-sdk-dynamodb = "0.18.0"
 tokio = { version = "1.21.0", features = ["full"] }
+figment = { version = "0.10", features = ["toml", "env"] }
+serde = { version = "1.0.144", features = ["derive"] }
+async-graphql = { version = "4.0.13" }
+anyhow = "1.0.64"
+thiserror = "1.0.34"
+base64 = "0.13.0"
