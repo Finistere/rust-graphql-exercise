@@ -1,14 +1,10 @@
+use anyhow::Result;
 use figment::{
     providers::{Format, Toml},
     Figment,
 };
 use serde::Deserialize;
-use anyhow::Result;
-
-#[derive(Debug, Deserialize)]
-pub struct DynamoDBConfig {
-    pub table: String,
-}
+use crate::database::dynamodb::DynamoDBConfig;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {

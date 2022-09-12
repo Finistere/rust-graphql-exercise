@@ -28,6 +28,6 @@ resource "aws_dynamodb_table" "graphql" {
 
   attribute {
     name = "id"
-    type = "S"
+    type = "B"
   }
 }
