@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use anyhow::{anyhow, Result};
 use async_graphql::*;
 use parity_scale_codec::{Decode, Encode};
@@ -7,6 +8,7 @@ use crate::database::Database;
 
 const VERSION: u32 = 1;
 
+pub type GraphQLSchema = Schema<Query, EmptyMutation, EmptySubscription>;
 pub type GraphQLDatabase = Box<dyn Database<Id, Vec<u8>>>;
 
 pub struct Query;
@@ -41,8 +43,14 @@ struct Todo {
 }
 
 #[derive(Debug, Encode, Decode, Copy, Clone)]
-struct Id {
+pub struct Id {
     ulid: u128,
+}
+
+impl Display for Id {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", Ulid::from(self.ulid).to_string())
+    }
 }
 
 impl Id {
@@ -71,6 +79,6 @@ impl ScalarType for Id {
     }
 
     fn to_value(&self) -> Value {
-        Value::String(self.ulid.to_string())
+        Value::String(Ulid::from(self.ulid).to_string())
     }
 }

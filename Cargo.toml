@@ -11,15 +11,16 @@ aws-sdk-dynamodb = "0.18.0"
 tokio = { version = "1.21.0", features = ["full"] }
 figment = { version = "0.10", features = ["toml", "env"] }
 serde = { version = "1.0.144", features = ["derive"] }
-async-graphql = { version = "4.0.13", features = ["tokio"] }
+async-graphql = { version = "4.0.13", features = ["tokio", "tracing"] }
 anyhow = "1.0.64"
 thiserror = "1.0.34"
 base64 = "0.13.0"
 tracing = "0.1.36"
 tracing-subscriber = "0.3.15"
 ulid = { version = "1.0.0", features = ["serde"] }
-warp = "0.3.2"
-async-graphql-warp = "4.0.13"
 async-trait = "0.1.57"
 flexbuffers = "2.0.0"
 parity-scale-codec = { version = "3.1.5", features = ["derive"] }
+hex = "0.4.3"
+actix-web = "4.2.1"
+async-graphql-actix-web = "4.0.13"

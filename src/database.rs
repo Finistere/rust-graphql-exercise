@@ -19,8 +19,10 @@ pub struct Get {
 pub trait Database<Id, Data>: Send + Sync
     where Id: Into<Vec<u8>> + Send,
           Data: Into<Vec<u8>> + Send {
+    async fn get(&self, id: Id) -> Result<Option<Get>>
+        where Id: 'async_trait;
 
-    async fn get(&self, id: Id) -> Result<Option<Get>>;
-
-    async fn put(&self, id: Id, version: u32, data: Data) -> Result<()>;
+    async fn put(&self, id: Id, version: u32, data: Data) -> Result<()>
+        where Id: 'async_trait,
+              Data: 'async_trait;
 }
