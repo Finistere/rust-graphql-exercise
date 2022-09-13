@@ -13,6 +13,7 @@
             # Unfortunately retrieving Rust through Flake didn't work with the intellij plugin. Only with VScdoe
             nativeBuildInputs = [ 
               terraform
+              bunyan-rs
             ];  
           };
         }

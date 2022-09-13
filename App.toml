@@ -1,2 +1,10 @@
 [dynamodb]
 table = "rust-graphql-exercise"
+partition_key = "PK"
+sort_key = "SK"
+gsi1_name = "GSI1"
+gsi1_partition_key = "GSI1-PK"
+gsi1_sort_key = "GSI1-SK"
+
+[serving]
+port = 8000

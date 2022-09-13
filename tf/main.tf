@@ -18,16 +18,3 @@ terraform {
 provider "aws" {
   region = "eu-west-3" # Paris
 }
-
-resource "aws_dynamodb_table" "graphql" {
-  name           = "rust-graphql-exercise"
-  billing_mode   = "PROVISIONED"
-  read_capacity  = 1
-  write_capacity = 1
-  hash_key       = "id"
-
-  attribute {
-    name = "id"
-    type = "B"
-  }
-}
