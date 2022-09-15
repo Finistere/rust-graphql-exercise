@@ -3,7 +3,7 @@
 #
 
 resource "aws_s3_bucket" "terraform-state" {
-  bucket = "brabier-rust-graphql-exercise-terraform-state"
+  bucket              = var.terraform_state_bucket
   # Ensuring tfstate files cannot be deleted for a certain time
   object_lock_enabled = true
 }
@@ -68,7 +68,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "terraform-state-b
 #
 
 resource "aws_dynamodb_table" "terraform-lock" {
-  name           = "rust-graphql-exercise-terraform-state"
+  name           = var.terraform_state_dynamodb_table
   read_capacity  = 1
   write_capacity = 1
   hash_key       = "LockID"

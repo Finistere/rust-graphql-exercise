@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "graphql" {
-  name           = "rust-graphql-exercise"
+  name           = var.dynamodb_table_name
   billing_mode   = "PROVISIONED"
   read_capacity  = 1
   write_capacity = 1

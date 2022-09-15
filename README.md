@@ -1,6 +1,6 @@
-# update
-not atomic, but there's no transaction neither. Neither juniper nor async-graphql seems to support transaction.
+# Rust GraphQL Exercise
 
+The current repository implements the following schema on top of AWS DynamoDB.
 
 ```graphql
 type TodoList @model {
@@ -16,3 +16,6 @@ type Todo @model {
   list: TodoList
 }
 ```
+
+# update
+not atomic, but there's no transaction neither. Neither juniper nor async-graphql seems to support transaction.
