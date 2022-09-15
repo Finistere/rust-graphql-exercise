@@ -1,6 +1,6 @@
-use async_graphql::{
-    Error, ErrorExtensions,
-};
+use async_graphql::{Error, ErrorExtensions, Result};
+
+use crate::graphql::types::id::ID;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Errors {
@@ -20,5 +20,13 @@ impl ErrorExtensions for Errors {
                 e.set("details", details.clone());
             }
         })
+    }
+}
+
+pub fn check_id_kind(id: &ID, expected_kind: &str) -> Result<()> {
+    if !id.has_kind(expected_kind) {
+        Err(Errors::InvalidValue(format!("Expected ID with '{}'", expected_kind)).extend())
+    } else {
+        Ok(())
     }
 }

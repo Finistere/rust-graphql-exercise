@@ -1,7 +1,7 @@
 use anyhow::Result;
 use figment::{
-    Figment,
     providers::{Format, Toml},
+    Figment,
 };
 use serde::Deserialize;
 use tracing::info;

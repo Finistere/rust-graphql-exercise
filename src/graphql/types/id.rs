@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 
 use anyhow::anyhow;
 use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
@@ -29,17 +30,12 @@ impl ID {
         }
     }
 
-    pub fn from_string(value: &str) -> anyhow::Result<ID> {
-        if let Some((kind, ulid)) = value.split_once(SEPARATOR) {
-            Ok(ID {
-                kind: Kind::from_string(kind),
-                ulid: Ulid::from_string(ulid)?,
-            })
-        } else { Err(anyhow!("Could not parse ID.")) }
-    }
-
     pub fn prefix(kind: &Kind) -> String {
         format!("{}{}", kind.0, SEPARATOR)
+    }
+
+    pub fn has_kind(&self, kind: &str) -> bool {
+        self.kind.0 == kind
     }
 }
 
@@ -49,6 +45,20 @@ impl Display for ID {
     }
 }
 
+impl FromStr for ID {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, anyhow::Error> {
+        if let Some((kind, ulid)) = s.split_once(SEPARATOR) {
+            Ok(ID {
+                kind: Kind::from_string(kind),
+                ulid: Ulid::from_string(ulid)?,
+            })
+        } else {
+            Err(anyhow!("Invalid ID format"))
+        }
+    }
+}
 
 impl From<&ID> for String {
     fn from(id: &ID) -> Self {
@@ -60,9 +70,7 @@ impl From<&ID> for String {
 impl ScalarType for ID {
     fn parse(value: Value) -> InputValueResult<Self> {
         if let Value::String(value) = &value {
-            ID::from_string(value).map_err(|e| {
-                InputValueError::from(e)
-            })
+            value.parse().map_err(|e| InputValueError::from(e))
         } else {
             Err(InputValueError::expected_type(value))
         }
