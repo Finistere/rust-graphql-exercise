@@ -1,15 +1,16 @@
 use async_graphql::{ComplexObject, Context, Result, SimpleObject};
 
-use crate::graphql::model::todo::Todo;
-use crate::graphql::model::todo_list::extensions::DynamoTableTodoListExt;
-use crate::graphql::types::id::ID;
-use crate::DynamoTable;
+use extensions::DynamoTableTodoListExt;
+
+use crate::dynamodb::DynamoTable;
+use crate::graphql::model::Todo;
+use crate::graphql::types::ID;
 
 pub mod extensions;
 pub mod mutation;
 pub mod query;
 
-pub const TODO_LIST_KIND: &str = "todo_list";
+pub const TODO_LIST_TYPE_NAME: &str = "todo_list";
 
 #[derive(Debug, SimpleObject)]
 #[graphql(complex)]

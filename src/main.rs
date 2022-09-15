@@ -3,17 +3,13 @@ use tracing_log::LogTracer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::{EnvFilter, Registry};
 
-use dynamodb::DynamoTable;
-
-use crate::serving::run_and_serve;
-
 mod config;
 mod dynamodb;
 mod graphql;
 mod serving;
 
 #[tokio::main]
-async fn main() -> () {
+async fn main() {
     // Tracing
     LogTracer::init().expect("Unable to setup log tracer!");
     let app_name = concat!(env!("CARGO_PKG_NAME"), "-", env!("CARGO_PKG_VERSION")).to_string();
@@ -27,8 +23,10 @@ async fn main() -> () {
         .with(bunyan_formatting_layer);
     tracing::subscriber::set_global_default(subscriber).unwrap();
 
+    // Load services/config
     let config = config::load().unwrap();
-    let db = DynamoTable::load(&config.dynamodb).await.unwrap();
+    let db = dynamodb::DynamoTable::load(&config.dynamodb).await.unwrap();
 
-    run_and_serve(config.serving, db).await;
+    // Start webserver
+    serving::run_and_serve(config.serving, db).await;
 }

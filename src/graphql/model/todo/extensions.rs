@@ -2,16 +2,18 @@ use std::convert::identity;
 
 use async_graphql::Result;
 use aws_sdk_dynamodb::model::{AttributeValue, ReturnValue};
+use tokio_stream::StreamExt;
 
-use crate::dynamodb::{AttributesGetterExt, RawAttributes};
-use crate::graphql::types::id::ID;
+use crate::dynamodb::{AttributesGetterExt, DynamoTable, RawAttributes};
+use crate::graphql::types::ID;
 use crate::graphql::Key;
-use crate::DynamoTable;
 
-use super::Todo;
+use super::{Todo, TODO_TYPE_NAME};
 
+/// Extension used to decorate the DynamoTable with specialized methods for Todo
 #[async_trait::async_trait]
 pub trait DynamoTableTodoExt {
+    async fn scan_todo(&self) -> Result<Vec<Todo>>;
     async fn get_todo(&self, id: &ID) -> Result<Option<(Key, Todo)>>;
     async fn put_todo(&self, todo: &Todo) -> Result<bool>;
     async fn update_todo(
@@ -25,6 +27,33 @@ pub trait DynamoTableTodoExt {
 
 #[async_trait::async_trait]
 impl DynamoTableTodoExt for DynamoTable {
+    async fn scan_todo(&self) -> Result<Vec<Todo>> {
+        let mut todos: Vec<Todo> = Vec::new();
+        let mut paginator = self
+            .scan()
+            .filter_expression("begins_with(#sk, :sk)")
+            .expression_attribute_names("#sk", &self.config.sort_key)
+            .expression_attribute_values(":sk", AttributeValue::S(ID::prefix(TODO_TYPE_NAME)))
+            .into_paginator()
+            .send();
+
+        while let Some(output) = paginator.next().await {
+            for item in output?.items().unwrap_or_default() {
+                let pkey: ID = item.get_from_string(&self.config.gsi1_partition_key)?;
+                let skey: ID = item.get_from_string(&self.config.gsi1_partition_key)?;
+                let list_id = if pkey != skey { Some(pkey) } else { None };
+                let todo = Todo {
+                    id: skey,
+                    title: item.get_string("title")?.clone(),
+                    complete: *item.get_bool("complete")?,
+                    list_id,
+                };
+                todos.push(todo);
+            }
+        }
+        Ok(todos)
+    }
+
     async fn get_todo(&self, id: &ID) -> Result<Option<(Key, Todo)>> {
         let gsi1_key = Key {
             partition: id.clone(),
@@ -43,7 +72,7 @@ impl DynamoTableTodoExt for DynamoTable {
 
     async fn put_todo(&self, todo: &Todo) -> Result<bool> {
         let key = Key {
-            partition: todo.list_id.clone().unwrap_or(todo.id.clone()),
+            partition: todo.list_id.clone().unwrap_or_else(|| todo.id.clone()),
             sort: todo.id.clone(),
         };
         self.put_item(&key, |put| {
@@ -74,7 +103,10 @@ impl DynamoTableTodoExt for DynamoTable {
             update_todo_inplace(self, old_key, old_todo, new_todo).await
         } else {
             let new_key = Key {
-                partition: new_todo.list_id.clone().unwrap_or(old_todo.id.clone()),
+                partition: new_todo
+                    .list_id
+                    .clone()
+                    .unwrap_or_else(|| old_todo.id.clone()),
                 sort: old_key.sort.clone(),
             };
             move_todo(self, old_key, new_key, new_todo).await
@@ -175,7 +207,7 @@ async fn update_todo_inplace(
 
     let item = resp
         .attributes()
-        .ok_or(anyhow::anyhow!("Missing attributes"))?;
+        .ok_or_else(|| anyhow::anyhow!("Missing attributes"))?;
     let todo = build_todo(&key, item)?;
     Ok((key, todo))
 }
@@ -189,7 +221,7 @@ fn build_todo(key: &Key, item: &RawAttributes) -> Result<Todo> {
     Ok(Todo {
         id: key.sort.clone(),
         title: item.get_string("title")?.clone(),
-        complete: item.get_bool("complete")?.clone(),
+        complete: *item.get_bool("complete")?,
         list_id,
     })
 }

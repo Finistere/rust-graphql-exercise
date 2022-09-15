@@ -9,6 +9,8 @@ async-graphql = { version = "4.0.13", features = ["tokio", "tracing"] }
 tokio = { version = "1.21.0", features = ["full"] }
 actix-web = "4.2.1"
 async-graphql-actix-web = "4.0.13"
+
+# Data
 aws-config = "0.48.0"
 aws-sdk-dynamodb = "0.18.0"
 ulid = { version = "1.0.0", features = ["serde"] }

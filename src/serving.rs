@@ -4,8 +4,8 @@ use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
 use serde::Deserialize;
 use tracing_actix_web::TracingLogger;
 
+use crate::dynamodb::DynamoTable;
 use crate::graphql::build_schema;
-use crate::DynamoTable;
 
 use super::graphql::GraphQLSchema;
 
@@ -14,7 +14,7 @@ pub struct ServingConfig {
     pub port: u16,
 }
 
-pub async fn run_and_serve(config: ServingConfig, db: DynamoTable) -> () {
+pub async fn run_and_serve(config: ServingConfig, db: DynamoTable) {
     let schema: GraphQLSchema = build_schema(db);
 
     HttpServer::new(move || {
@@ -45,7 +45,5 @@ async fn index(schema: web::Data<GraphQLSchema>, req: GraphQLRequest) -> GraphQL
 async fn index_playground() -> HttpResponse {
     HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
-        .body(playground_source(
-            GraphQLPlaygroundConfig::new("/").subscription_endpoint("/"),
-        ))
+        .body(playground_source(GraphQLPlaygroundConfig::new("/")))
 }

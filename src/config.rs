@@ -6,7 +6,7 @@ use figment::{
 use serde::Deserialize;
 use tracing::info;
 
-use crate::dynamodb::DynamoDBConfig;
+use crate::dynamodb::config::DynamoDBConfig;
 use crate::serving::ServingConfig;
 
 #[derive(Debug, Deserialize)]

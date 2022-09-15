@@ -1,11 +1,11 @@
 use async_graphql::{Context, ErrorExtensions, InputObject, Object, OneofObject, Result};
 
+use crate::dynamodb::DynamoTable;
 use crate::graphql::errors::{check_id_kind, Errors};
-use crate::graphql::model::todo::extensions::DynamoTableTodoExt;
-use crate::graphql::types::id::ID;
-use crate::DynamoTable;
+use crate::graphql::types::ID;
 
-use super::{Todo, TODO_KIND};
+use super::extensions::DynamoTableTodoExt;
+use super::{Todo, TODO_TYPE_NAME};
 
 #[derive(Debug, InputObject)]
 struct TodoCreateInput {
@@ -40,7 +40,7 @@ pub struct TodoMutation;
 impl TodoMutation {
     async fn todo_create(&self, ctx: &Context<'_>, input: TodoCreateInput) -> Result<Todo> {
         let todo = Todo {
-            id: ID::new(&TODO_KIND),
+            id: ID::new(TODO_TYPE_NAME),
             title: input.title,
             complete: input.complete.unwrap_or(false),
             list_id: input.list.map(|rel| rel.link),
@@ -50,11 +50,10 @@ impl TodoMutation {
     }
 
     async fn todo_update(&self, ctx: &Context<'_>, input: TodoUpdateInput) -> Result<Todo> {
-        check_id_kind(&input.id, TODO_KIND)?;
+        check_id_kind(&input.id, TODO_TYPE_NAME)?;
         let dynamodb = ctx.data_unchecked::<DynamoTable>();
-        let maybe_old = dynamodb.get_todo(&input.id).await?;
-        let (old_key, old_todo) = if let Some(x) = maybe_old {
-            x
+        let (old_key, old_todo) = if let Some(old) = dynamodb.get_todo(&input.id).await? {
+            old
         } else {
             return Err(Errors::NotFound.extend());
         };
@@ -79,8 +78,8 @@ impl TodoMutation {
 
         let new_todo = Todo {
             id: old_todo.id.clone(),
-            title: input.title.unwrap_or(old_todo.title.clone()),
-            complete: input.complete.unwrap_or(old_todo.complete.clone()),
+            title: input.title.unwrap_or_else(|| old_todo.title.clone()),
+            complete: input.complete.unwrap_or(old_todo.complete),
             list_id: new_list_id,
         };
 
@@ -91,11 +90,11 @@ impl TodoMutation {
     }
 
     async fn todo_delete(&self, ctx: &Context<'_>, id: ID) -> Result<Todo> {
-        check_id_kind(&id, TODO_KIND)?;
+        check_id_kind(&id, TODO_TYPE_NAME)?;
         let dynamodb = ctx.data_unchecked::<DynamoTable>();
         dynamodb
             .delete_todo(&id)
             .await?
-            .ok_or(Errors::NotFound.extend())
+            .ok_or_else(|| Errors::NotFound.extend())
     }
 }

@@ -6,9 +6,9 @@ use model::todo::query::TodoQuery;
 use model::todo_list::mutation::TodoListMutation;
 use model::todo_list::query::TodoListQuery;
 
-use crate::dynamodb::ItemKey;
-use crate::graphql::types::id::ID;
-use crate::DynamoTable;
+use crate::dynamodb::item::ItemKey;
+use crate::dynamodb::DynamoTable;
+use crate::graphql::types::ID;
 
 mod errors;
 mod model;

@@ -1,11 +1,11 @@
 use async_graphql::{Context, ErrorExtensions, InputObject, Object, Result};
 
+use crate::dynamodb::DynamoTable;
 use crate::graphql::errors::{check_id_kind, Errors};
-use crate::graphql::types::id::ID;
-use crate::DynamoTable;
+use crate::graphql::types::ID;
 
 use super::extensions::DynamoTableTodoListExt;
-use super::{TodoList, TODO_LIST_KIND};
+use super::{TodoList, TODO_LIST_TYPE_NAME};
 
 #[derive(Debug, InputObject)]
 struct TodoListInputCreate {
@@ -30,7 +30,7 @@ impl TodoListMutation {
     ) -> Result<TodoList> {
         let dynamodb = ctx.data_unchecked::<DynamoTable>();
         let todo_list = TodoList {
-            id: ID::new(TODO_LIST_KIND),
+            id: ID::new(TODO_LIST_TYPE_NAME),
             title: input.title,
         };
         dynamodb.put_todo_list(&todo_list).await?;
@@ -42,7 +42,7 @@ impl TodoListMutation {
         ctx: &Context<'_>,
         input: TodoListInputUpdate,
     ) -> Result<TodoList> {
-        check_id_kind(&input.id, TODO_LIST_KIND)?;
+        check_id_kind(&input.id, TODO_LIST_TYPE_NAME)?;
         let dynamodb = ctx.data_unchecked::<DynamoTable>();
 
         if let Some(title) = input.title {
@@ -51,16 +51,16 @@ impl TodoListMutation {
             dynamodb
                 .get_todo_list(&input.id)
                 .await?
-                .ok_or(Errors::NotFound.extend())
+                .ok_or_else(|| Errors::NotFound.extend())
         }
     }
 
     async fn todo_list_delete(&self, ctx: &Context<'_>, id: ID) -> Result<TodoList> {
-        check_id_kind(&id, TODO_LIST_KIND)?;
+        check_id_kind(&id, TODO_LIST_TYPE_NAME)?;
         let dynamodb = ctx.data_unchecked::<DynamoTable>();
         dynamodb
             .delete_todo_list(&id)
             .await?
-            .ok_or(Errors::NotFound.extend())
+            .ok_or_else(|| Errors::NotFound.extend())
     }
 }

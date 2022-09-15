@@ -5,37 +5,33 @@ use anyhow::anyhow;
 use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 use ulid::Ulid;
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Kind(String);
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct TypeName(String);
 
-#[derive(Debug, Clone, PartialEq)]
+/// Unique identifier across all entities. It will be stored as a string formatted as
+/// '<type_name>#<ulid>` in DynamoDB.
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ID {
-    kind: Kind,
+    type_name: TypeName,
     ulid: Ulid,
 }
 
 const SEPARATOR: &str = "#";
 
-impl Kind {
-    pub fn from_string(kind: &str) -> Kind {
-        Kind(String::from(kind))
-    }
-}
-
 impl ID {
-    pub fn new(kind: &str) -> ID {
+    pub fn new(type_name: &str) -> ID {
         ID {
-            kind: Kind::from_string(kind),
+            type_name: TypeName(type_name.to_owned()),
             ulid: Ulid::new(),
         }
     }
 
-    pub fn prefix(kind: &Kind) -> String {
-        format!("{}{}", kind.0, SEPARATOR)
+    pub fn prefix(type_name: &str) -> String {
+        format!("{}{}", type_name, SEPARATOR)
     }
 
-    pub fn has_kind(&self, kind: &str) -> bool {
-        self.kind.0 == kind
+    pub fn has_type_name(&self, type_name: &str) -> bool {
+        self.type_name.0 == type_name
     }
 }
 
@@ -49,9 +45,9 @@ impl FromStr for ID {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, anyhow::Error> {
-        if let Some((kind, ulid)) = s.split_once(SEPARATOR) {
+        if let Some((type_name, ulid)) = s.split_once(SEPARATOR) {
             Ok(ID {
-                kind: Kind::from_string(kind),
+                type_name: TypeName(type_name.to_owned()),
                 ulid: Ulid::from_string(ulid)?,
             })
         } else {
@@ -62,7 +58,7 @@ impl FromStr for ID {
 
 impl From<&ID> for String {
     fn from(id: &ID) -> Self {
-        format!("{}{}{}", id.kind.0, SEPARATOR, id.ulid)
+        format!("{}{}{}", id.type_name.0, SEPARATOR, id.ulid)
     }
 }
 
@@ -70,7 +66,7 @@ impl From<&ID> for String {
 impl ScalarType for ID {
     fn parse(value: Value) -> InputValueResult<Self> {
         if let Value::String(value) = &value {
-            value.parse().map_err(|e| InputValueError::from(e))
+            value.parse().map_err(InputValueError::from)
         } else {
             Err(InputValueError::expected_type(value))
         }

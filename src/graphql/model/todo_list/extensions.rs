@@ -4,16 +4,17 @@ use async_graphql::{Error, Result};
 use aws_sdk_dynamodb::model::{AttributeValue, ReturnValue};
 use tokio_stream::StreamExt;
 
-use crate::dynamodb::{AttributesGetterExt, RawAttributes};
-use crate::graphql::model::todo::{Todo, TODO_KIND};
-use crate::graphql::types::id::{Kind, ID};
+use crate::dynamodb::{AttributesGetterExt, DynamoTable, RawAttributes};
+use crate::graphql::model::{Todo, TODO_LIST_TYPE_NAME, TODO_TYPE_NAME};
+use crate::graphql::types::ID;
 use crate::graphql::Key;
-use crate::DynamoTable;
 
 use super::TodoList;
 
+/// Extension used to decorate the DynamoTable with specialized methods for TodoList
 #[async_trait::async_trait]
 pub trait DynamoTableTodoListExt {
+    async fn scan_todo_list(&self) -> Result<Vec<TodoList>>;
     async fn get_todo_list_todos(&self, id: &ID) -> Result<Vec<Todo>>;
     async fn get_todo_list(&self, id: &ID) -> Result<Option<TodoList>>;
     async fn put_todo_list(&self, todo_list: &TodoList) -> Result<bool>;
@@ -23,11 +24,32 @@ pub trait DynamoTableTodoListExt {
 
 #[async_trait::async_trait]
 impl DynamoTableTodoListExt for DynamoTable {
+    async fn scan_todo_list(&self) -> Result<Vec<TodoList>> {
+        let mut todo_lists: Vec<TodoList> = Vec::new();
+        let mut paginator = self
+            .scan()
+            .filter_expression("begins_with(#sk, :sk)")
+            .expression_attribute_names("#sk", &self.config.sort_key)
+            .expression_attribute_values(":sk", AttributeValue::S(ID::prefix(TODO_LIST_TYPE_NAME)))
+            .into_paginator()
+            .send();
+
+        while let Some(output) = paginator.next().await {
+            for item in output?.items().unwrap_or_default() {
+                let todo_list = TodoList {
+                    id: item.get_from_string(&self.config.partition_key)?,
+                    title: item.get_string("title")?.clone(),
+                };
+                todo_lists.push(todo_list);
+            }
+        }
+        Ok(todo_lists)
+    }
+
     async fn get_todo_list_todos(&self, id: &ID) -> Result<Vec<Todo>> {
         let mut todos: Vec<Todo> = Vec::new();
-        let todo_kind = Kind::from_string(TODO_KIND);
         let mut paginator = self
-            .query_partition_by_prefix(&id, &ID::prefix(&todo_kind))
+            .query_partition_by_prefix(&id, &ID::prefix(TODO_TYPE_NAME))
             .into_paginator()
             .send();
         while let Some(output) = paginator.next().await {
@@ -35,7 +57,7 @@ impl DynamoTableTodoListExt for DynamoTable {
                 let todo = Todo {
                     id: item.get_from_string(&self.config.gsi1_partition_key)?,
                     title: item.get_string("title")?.clone(),
-                    complete: item.get_bool("complete")?.clone(),
+                    complete: *item.get_bool("complete")?,
                     list_id: Some(id.clone()),
                 };
                 todos.push(todo);
@@ -51,7 +73,7 @@ impl DynamoTableTodoListExt for DynamoTable {
         };
         let output = self.get_item(&key, identity).await?;
         Ok(if let Some(item) = output.item {
-            Some(build_todo_list(&id, &item)?)
+            Some(build_todo_list(id, &item)?)
         } else {
             None
         })
@@ -83,7 +105,7 @@ impl DynamoTableTodoListExt for DynamoTable {
             })
             .await?;
         if let Some(item) = output.attributes {
-            Ok(build_todo_list(&id, &item)?)
+            Ok(build_todo_list(id, &item)?)
         } else {
             Err(Error::new("Missing attributes"))
         }
@@ -98,7 +120,7 @@ impl DynamoTableTodoListExt for DynamoTable {
             .delete_item(&key, |req| req.return_values(ReturnValue::AllOld))
             .await?;
         Ok(if let Some(item) = output.attributes {
-            Some(build_todo_list(&id, &item)?)
+            Some(build_todo_list(id, &item)?)
         } else {
             None
         })
