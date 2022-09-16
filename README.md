@@ -154,4 +154,6 @@ was to be used by a client.
 - To handle proper data model migration I would add a `schema_version` attribute which can be used to know if an item
   needs to be migrated or not
 - I wondered whether the keys should be stored in binary or not. It would improve space efficiency, but it implies having
-  to create/use proper tooling for data exploration and exports to show keys in a friendlier format.
+  to create/use proper tooling for data exploration and exports to show keys in a friendlier format. Here I choosed to
+  store them as strings for the sake of simplicity.
+
