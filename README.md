@@ -1,6 +1,6 @@
 # Rust GraphQL Exercise
 
-The current repository implements the following schema on top of AWS DynamoDB.
+The current repository implements the following model on top of AWS DynamoDB.
 
 ```graphql
 type TodoList @model {
@@ -21,8 +21,7 @@ type Todo @model {
 ## Setup
 
 Terraform is available in the `tf` folder which creates a new DynamoDB table. The Terraform state is stored inside a S3
-bucket with object lock and encryption. It's definitely overkill for the project. I only did it for the sake of 
-learning.
+bucket with object lock and encryption.
 
 The application has several configuration parameters defined in `App.toml` and can be run with:
 
@@ -30,7 +29,7 @@ The application has several configuration parameters defined in `App.toml` and c
 cargo run
 ```
 
-Logs are generated in the Bunyan format, which can be formatted in a nicer manner for the CLI with:
+Logs are generated in the Bunyan format, so `bunyan` can be used to generate friendlier messages:
 
 ```shell
 cargo run | bunyan -l warn
@@ -51,11 +50,12 @@ Everything is stored in a single DynamoDB table:
 +--------------+--------------+--------------+--------------+
 ```
 
-There are three main access patterns:
+Here are the main access patterns:
 
 1) retrieve a `Todo` by its `id`: `PK = 'todo#ID'`
 2) retrieve a `TodoList` by its `id`: `PK = 'todo_list#ID'`
 3) retrieve all `Todo`s of a `TodoList`: `PK = 'todo_list#ID' and begins_with(GSI1-PK, 'todo#')`
+4) retrieve all `Todo` (or `TodoList`): Scan with `begins_with(SK, 'todo#')`
 
 The global secondary index `GSI1` includes all attributes mainly for simplicity reasons.
 
@@ -131,8 +131,8 @@ input TodoUpdateInput {
 
 All tests were done by hand... For a real production project I would focus on functional tests. I would start the 
 application locally with a [LocalStack](https://docs.localstack.cloud/overview/) docker image imitating DynamoDB and
-execute GraphQL requests on it. I'm not sure in which language I would write those tests though, either in Rust or in
-TypeScript as the tooling to generate GraphQL clients is probably better. The project also obviously needs proper
+execute GraphQL requests. I'm not sure in which language I would write those tests though, either in Rust or in
+TypeScript as the tooling to generate GraphQL clients might be better. The project also obviously needs proper
 CI (clippy, format, test...).
 
 ## Documentation
@@ -151,3 +151,7 @@ was to be used by a client.
   use an atomic counter `item_version`, incremented on update, and a condition check inside the transaction. If the 
   `item_version` changed, the transaction is aborted.
 - DynamoDB requests could be batched together with DataLoaders.
+- To handle proper data model migration I would add a `schema_version` attribute which can be used to know if an item
+  needs to be migrated or not
+- I wondered whether the keys should be stored in binary or not. It would improve space efficiency, but it implies having
+  to create/use proper tooling for data exploration and exports to show keys in a friendlier format.
