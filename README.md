@@ -45,7 +45,7 @@ Everything is stored in a single DynamoDB table:
 |     PK       |      SK      |   GSI1-PK    |   GSI1-SK    |
 +--------------+--------------+--------------+--------------+
 | todo#ID      | todo#ID      | todo#ID      | todo#ID      |  <- standalone Todo
-| todo_list#ID | todo_list#ID | todo_list#ID | todo_list#ID |  <- TodoList
+| todo_list#ID | todo_list#ID |              |              |  <- TodoList
 | todo_list#ID | todo#ID      | todo#ID      | todo#ID      |  <- Todo associated with a TodoList
 +--------------+--------------+--------------+--------------+
 ```
