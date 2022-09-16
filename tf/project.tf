@@ -32,7 +32,7 @@ resource "aws_dynamodb_table" "graphql" {
     range_key          = "GSI1-SK"
     write_capacity     = 1
     read_capacity      = 1
-    # The cost/benefit ratio is unclear to me. It allows for a transactional
+    # For the sake of simplicity, we're simply including all attributes in this example.
     projection_type    = "ALL"
   }
 }

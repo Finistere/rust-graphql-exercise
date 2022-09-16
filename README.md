@@ -132,7 +132,8 @@ input TodoUpdateInput {
 All tests were done by hand... For a real production project I would focus on functional tests. I would start the 
 application locally with a [LocalStack](https://docs.localstack.cloud/overview/) docker image imitating DynamoDB and
 execute GraphQL requests on it. I'm not sure in which language I would write those tests though, either in Rust or in
-TypeScript as the tooling to generate GraphQL clients is probably better.
+TypeScript as the tooling to generate GraphQL clients is probably better. The project also obviously needs proper
+CI (clippy, format, test...).
 
 ## Documentation
 
@@ -146,7 +147,7 @@ was to be used by a client.
   impact. Including some attributes only some attributes is obviously an intermediate solution. 
 - The collection endpoints should use a Relay style cursor API instead of retrieving everything at once.
 - Updating a `Todo` with a different `TodoList` isn't an atomic operation. It will first fetch the data and then in a 
-transaction change it. Any changes between those requests will not be taken into account. To circumvent this we could
-use an atomic counter `item_version`, incremented on update, and a condition check inside the transaction. If the 
-`item_version` changed, the transaction is aborted.
+  transaction change it. Any changes between those requests will not be taken into account. To circumvent this we could
+  use an atomic counter `item_version`, incremented on update, and a condition check inside the transaction. If the 
+  `item_version` changed, the transaction is aborted.
 - DynamoDB requests could be batched together with DataLoaders.
