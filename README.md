@@ -52,7 +52,7 @@ Everything is stored in a single DynamoDB table:
 
 Here are the main access patterns:
 
-1) retrieve a `Todo` by its `id`: `PK = 'todo#ID'`
+1) retrieve a `Todo` by its `id`: `GSI1-PK  = 'todo#ID'`
 2) retrieve a `TodoList` by its `id`: `PK = 'todo_list#ID'`
 3) retrieve all `Todo`s of a `TodoList`: `PK = 'todo_list#ID' and begins_with(GSI1-PK, 'todo#')`
 4) retrieve all `Todo` (or `TodoList`): Scan with `begins_with(SK, 'todo#')`
